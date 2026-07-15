@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영롱한 날씨 예보 - SkyFlow</title>
+    <!-- Google Fonts - Outfit 웹폰트 적용으로 세련된 폰트 선사 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN 적용으로 깔끔하고 이쁜 날씨 아이콘 렌더링 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- D3.js: 실제 초정밀 GeoJSON 기반 한반도 지도 실측 렌더링을 위한 핵심 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <!-- 한반도 행정구역 GeoJSON 로컬 데이터 (외부 URL 없이 오프라인 동작) -->
+    <script src="korea-map.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 배경 애니메이션 그라데이션 레이어 -->
+    <div class="bg-animation"></div>
+
+    <div class="app-container">
+        <!-- 상단 헤더 및 검색창 영역 -->
+        <header>
+            <h1 class="logo"><i data-lucide="cloud-sun" class="logo-icon"></i> SkyFlow</h1>
+            <div class="search-box">
+                <input type="text" id="city-search" placeholder="도시명을 입력하세요 (예: 서울, 대전, 제주, Tokyo)..." autocomplete="off">
+                <button id="search-btn" title="검색하기"><i data-lucide="search"></i></button>
+                <button id="geo-btn" title="현재 위치 날씨 보기"><i data-lucide="map-pin"></i></button>
+            </div>
+            
+            <!-- 퀵 브릿지 도시 선택 버튼 -->
+            <div class="quick-cities">
+                <button class="city-chip active" data-lat="37.5665" data-lon="126.9780">서울</button>
+                <button class="city-chip" data-lat="35.1796" data-lon="129.0756">부산</button>
+                <button class="city-chip" data-lat="35.8714" data-lon="128.6014">대구</button>
+                <button class="city-chip" data-lat="37.4563" data-lon="126.7052">인천</button>
+                <button class="city-chip" data-lat="35.1595" data-lon="126.8526">광주</button>
+                <button class="city-chip" data-lat="36.3504" data-lon="127.3845">대전</button>
+                <button class="city-chip" data-lat="33.4996" data-lon="126.5312">제주</button>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <main class="grid-layout">
+            
+            <!-- 왼쪽 컬럼: 실시간 현재 날씨 카드 -->
+            <section class="main-card glass-panel" id="current-weather-panel">
+                <div class="card-header">
+                    <span class="location-name" id="location-display"><i data-lucide="map-pin"></i> 날씨를 로딩 중입니다...</span>
+                    <span class="current-date" id="date-display">2026년 07월 15일</span>
+                </div>
+                <div class="weather-main">
+                    <div class="weather-icon-wrapper" id="weather-icon-main">
+                        <i data-lucide="sun" class="animate-pulse"></i>
+                    </div>
+                    <div class="temp-wrapper">
+                        <span class="temp-val" id="temp-display">--</span>
+                        <span class="temp-unit">°C</span>
+                    </div>
+                    <p class="weather-desc" id="weather-desc-display">상태 조회 중</p>
+                </div>
+                
+                <!-- 하위 날씨 디테일 그리드 -->
+                <div class="weather-details">
+                    <div class="detail-item">
+                        <i data-lucide="thermometer"></i>
+                        <div class="detail-info">
+                            <span class="label">체감 온도</span>
+                            <span class="value" id="feels-like-display">--°C</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i data-lucide="droplets"></i>
+                        <div class="detail-info">
+                            <span class="label">습도</span>
+                            <span class="value" id="humidity-display">--%</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i data-lucide="wind"></i>
+                        <div class="detail-info">
+                            <span class="label">풍속</span>
+                            <span class="value" id="wind-display">-- m/s</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <i data-lucide="umbrella"></i>
+                        <div class="detail-info">
+                            <span class="label">강수 확률</span>
+                            <span class="value" id="pop-display">--%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 오른쪽 컬럼: 지역별 기상 특보 현황판 -->
+            <section class="alert-panel glass-panel">
+                <div class="alert-panel-header">
+                    <h2 class="panel-title"><i data-lucide="shield-alert"></i> 지역 기상 특보 현황</h2>
+                </div>
+
+                <!-- 지역 선택 빠른 버튼 -->
+                <div class="region-quick-btns" id="region-quick-btns">
+                    <button class="region-btn active" data-region="서울특별시" data-lat="37.5665" data-lon="126.9780">서울</button>
+                    <button class="region-btn" data-region="부산광역시"  data-lat="35.1796" data-lon="129.0756">부산</button>
+                    <button class="region-btn" data-region="대구광역시"  data-lat="35.8714" data-lon="128.6014">대구</button>
+                    <button class="region-btn" data-region="인천광역시"  data-lat="37.4563" data-lon="126.7052">인천</button>
+                    <button class="region-btn" data-region="광주광역시"  data-lat="35.1595" data-lon="126.8526">광주</button>
+                    <button class="region-btn" data-region="대전광역시"  data-lat="36.3504" data-lon="127.3845">대전</button>
+                    <button class="region-btn" data-region="울산광역시"  data-lat="35.5384" data-lon="129.3114">울산</button>
+                    <button class="region-btn" data-region="강원특별자치도" data-lat="37.8228" data-lon="128.1555">강원</button>
+                    <button class="region-btn" data-region="제주특별자치도" data-lat="33.4996" data-lon="126.5312">제주</button>
+                </div>
+
+                <!-- 현재 선택 지역명 -->
+                <div class="selected-region-name">
+                    <i data-lucide="map-pin" style="width:16px;height:16px;color:var(--accent-color)"></i>
+                    <span id="alert-region-display">서울특별시</span>
+                </div>
+
+                <!-- 기상 특보 5개 카드 -->
+                <div class="alert-cards-grid" id="alert-cards-grid">
+                    <!-- JS로 동적 렌더링 -->
+                    <div class="alert-card-loading">날씨 정보 로드 중...</div>
+                </div>
+
+                <!-- 전국 주요 도시 한눈에 보기 -->
+                <div class="nationwide-section">
+                    <h3 class="nationwide-title"><i data-lucide="list" style="width:14px;height:14px"></i> 전국 주요 도시 현황</h3>
+                    <div class="nationwide-grid" id="nationwide-grid">
+                        <!-- JS로 동적 렌더링 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 하단 전체 가로 배치의 시간별 날씨 예보 -->
+            <section class="hourly-forecast glass-panel grid-span-all">
+                <h2 class="panel-title"><i data-lucide="clock"></i> 시간별 예보 (오늘)</h2>
+                <div class="hourly-scroll-container" id="hourly-list">
+                    <div class="loading-spinner">시간별 예보를 로드 중입니다...</div>
+                </div>
+            </section>
+
+            <!-- 하단 전체 가로 배치의 주간 예보 -->
+            <section class="weekly-forecast glass-panel grid-span-all">
+                <h2 class="panel-title"><i data-lucide="calendar"></i> 7일간의 주간 예보</h2>
+                <div class="weekly-list-container" id="weekly-list">
+                    <div class="loading-spinner">주간 예보를 로드 중입니다...</div>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p>날씨 정보를 분석하고 있습니다...</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+/* =============================================================
+ * SkyFlow - 스타일시트 (지도 제거 / 지역 기상 특보 카드 UI)
+ * ============================================================= */
+
+/* 1. Global Variables */
+:root {
+    --bg-primary: #0b0f19;
+    --glass-bg: rgba(22, 30, 49, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-color: #38bdf8;
+    --accent-gradient: linear-gradient(135deg, #38bdf8, #818cf8);
+    --card-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+    --font-outfit: 'Outfit', 'Noto Sans KR', sans-serif;
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: var(--font-outfit);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-y: auto; overflow-x: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px;
+}
+
+/* 2. Background */
+.bg-animation {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+    background: linear-gradient(125deg,#0b0f19,#1a1b3a,#0e1626,#042535);
+    background-size: 400% 400%;
+    animation: auroraBackground 20s ease infinite;
+}
+@keyframes auroraBackground {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 3. Layout */
+.app-container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 32px; }
+header { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; }
+
+.logo {
+    font-size: 2.4rem; font-weight: 800; letter-spacing: -0.5px;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: flex; align-items: center; gap: 10px;
+}
+.logo-icon { stroke: var(--accent-color); filter: drop-shadow(0 0 8px rgba(56,189,248,0.4)); }
+
+.search-box {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(15,23,42,0.6);
+    border: 1px solid var(--glass-border); border-radius: 50px;
+    padding: 6px 6px 6px 20px;
+    backdrop-filter: blur(10px);
+    transition: var(--transition-smooth);
+    width: 100%; max-width: 520px; margin: 0 auto;
+}
+.search-box:focus-within { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56,189,248,0.25); }
+.search-box input { background:none; border:none; outline:none; color:var(--text-primary); font-family:inherit; font-size:0.95rem; flex-grow:1; }
+.search-box input::placeholder { color:var(--text-secondary); }
+.search-box button {
+    background: rgba(255,255,255,0.05); border:none; color:var(--text-primary);
+    width:42px; height:42px; border-radius:50%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: var(--transition-smooth);
+}
+.search-box button:hover { background: var(--accent-gradient); color:#fff; transform:scale(1.05); }
+
+.quick-cities { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; justify-content:center; }
+.city-chip {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+    color:var(--text-secondary); padding:8px 16px; border-radius:20px;
+    cursor:pointer; font-family:inherit; font-size:0.85rem; font-weight:600;
+    white-space:nowrap; transition: var(--transition-smooth);
+}
+.city-chip:hover, .city-chip.active {
+    background: var(--accent-gradient); color:#fff; border-color:transparent;
+    transform:translateY(-2px); box-shadow:0 4px 12px rgba(56,189,248,0.3);
+}
+
+/* 4. Grid */
+.grid-layout { display:grid; grid-template-columns:1fr 1.3fr; gap:28px; width:100%; }
+.grid-span-all { grid-column:span 2; }
+.glass-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: var(--card-shadow);
+    padding: 28px;
+    transition: var(--transition-smooth);
+}
+
+/* 5. 현재 날씨 카드 */
+.main-card {
+    display:flex; flex-direction:column; justify-content:space-between;
+    min-height:500px; position:relative; overflow:hidden;
+}
+.main-card::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 60%);
+    pointer-events:none; z-index:0;
+}
+.card-header { display:flex; justify-content:space-between; align-items:center; z-index:1; }
+.location-name { font-size:1.5rem; font-weight:800; letter-spacing:-0.5px; display:flex; align-items:center; gap:8px; }
+.current-date  { font-size:0.85rem; color:var(--text-secondary); font-weight:500; }
+.weather-main  { display:flex; flex-direction:column; align-items:center; margin:24px 0; z-index:1; }
+.weather-icon-wrapper { margin-bottom:8px; filter:drop-shadow(0 8px 16px rgba(56,189,248,0.35)); }
+.weather-icon-wrapper i { width:90px; height:90px; stroke:#38bdf8; stroke-width:1.5; }
+.temp-wrapper { display:flex; align-items:flex-start; line-height:1; }
+.temp-val { font-size:5.2rem; font-weight:800; letter-spacing:-2px; }
+.temp-unit { font-size:2rem; font-weight:600; color:var(--accent-color); margin-top:8px; margin-left:2px; }
+.weather-desc { font-size:1.2rem; font-weight:700; color:var(--text-primary); margin-top:8px; }
+.weather-details { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; border-top:1px solid rgba(255,255,255,0.08); padding-top:18px; z-index:1; }
+.detail-item { display:flex; align-items:center; gap:12px; padding:12px; border-radius:18px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.02); }
+.detail-item i { width:22px; height:22px; color:var(--accent-color); }
+.detail-info { display:flex; flex-direction:column; }
+.detail-info .label { font-size:0.78rem; color:var(--text-secondary); font-weight:500; }
+.detail-info .value { font-size:0.98rem; font-weight:700; }
+
+/* ═══════════════════════════════════════════════════════════════
+   6. 지역 기상 특보 패널 (지도 대체)
+   ═══════════════════════════════════════════════════════════════ */
+.alert-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 500px;
+}
+.alert-panel-header { display:flex; justify-content:space-between; align-items:center; }
+
+/* 지역 빠른 선택 버튼 */
+.region-quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+.region-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition: var(--transition-smooth);
+}
+.region-btn:hover { background:rgba(255,255,255,0.08); color:var(--text-primary); }
+.region-btn.active {
+    background: var(--accent-gradient);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(56,189,248,0.3);
+}
+
+/* 선택 지역 표시 */
+.selected-region-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 12px;
+}
+
+/* 기상 특보 5개 카드 그리드 */
+.alert-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+.alert-card-loading {
+    grid-column: span 5;
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 28px;
+    font-size: 0.9rem;
+}
+
+/* 개별 기상 특보 카드 */
+.alert-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 8px 14px;
+    border-radius: 18px;
+    border: 2px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+}
+.alert-card:hover { transform: translateY(-3px); }
+
+.alert-card-icon  { font-size: 1.8rem; line-height: 1; }
+.alert-card-name  { font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); }
+.alert-card-value { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); text-align: center; line-height: 1.3; }
+.alert-card-sub   { font-size: 0.65rem; font-weight: 600; text-align: center; line-height: 1.3; }
+
+/* 상태별 카드 테마 */
+.alert-card.status-safe {
+    border-color: rgba(34,197,94,0.3);
+    background: rgba(34,197,94,0.05);
+}
+.alert-card.status-safe .alert-card-sub { color: #22c55e; }
+
+.alert-card.status-caution {
+    border-color: rgba(234,179,8,0.4);
+    background: rgba(234,179,8,0.07);
+}
+.alert-card.status-caution .alert-card-sub { color: #eab308; }
+
+.alert-card.status-warning {
+    border-color: rgba(249,115,22,0.4);
+    background: rgba(249,115,22,0.07);
+}
+.alert-card.status-warning .alert-card-sub { color: #f97316; }
+
+.alert-card.status-danger {
+    border-color: rgba(239,68,68,0.5);
+    background: rgba(239,68,68,0.08);
+    animation: danger-pulse 2s ease-in-out infinite;
+}
+.alert-card.status-danger .alert-card-sub { color: #ef4444; }
+
+.alert-card.status-active {
+    border-color: rgba(59,130,246,0.5);
+    background: rgba(59,130,246,0.07);
+}
+.alert-card.status-active .alert-card-sub { color: #60a5fa; }
+
+.alert-card.status-snow {
+    border-color: rgba(147,197,253,0.5);
+    background: rgba(147,197,253,0.07);
+}
+.alert-card.status-snow .alert-card-sub { color: #93c5fd; }
+
+@keyframes danger-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.15); }
+    50%      { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+
+/* ── 전국 도시 현황 ── */
+.nationwide-section { display: flex; flex-direction: column; gap: 10px; }
+.nationwide-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 14px;
+}
+.nationwide-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.nationwide-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: var(--transition-smooth);
+    cursor: pointer;
+}
+.nationwide-item:hover { background: rgba(255,255,255,0.07); transform: translateX(2px); }
+.nationwide-city  { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.nationwide-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.badge {
+    font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+    border-radius: 10px; white-space: nowrap;
+}
+.badge-temp     { background: rgba(249,115,22,0.2); color: #f97316; }
+.badge-dust-good{ background: rgba(34,197,94,0.2);  color: #22c55e; }
+.badge-dust-mid { background: rgba(234,179,8,0.2);  color: #eab308; }
+.badge-dust-bad { background: rgba(249,115,22,0.2); color: #f97316; }
+.badge-dust-vbad{ background: rgba(239,68,68,0.2);  color: #ef4444; }
+.badge-rain     { background: rgba(59,130,246,0.2);  color: #60a5fa; }
+.badge-snow     { background: rgba(147,197,253,0.2); color: #93c5fd; }
+.badge-heat     { background: rgba(239,68,68,0.2);   color: #ef4444; }
+
+/* 7. 시간별/주간 예보 */
+.panel-title { font-size:1.05rem; font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; color:var(--text-primary); }
+.panel-title i { width:18px; height:18px; color:var(--accent-color); }
+.hourly-scroll-container { display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; scroll-behavior:smooth; }
+.hourly-scroll-container::-webkit-scrollbar { height:5px; }
+.hourly-scroll-container::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:10px; }
+.hourly-card {
+    min-width:76px; flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    padding:14px 10px; border-radius:16px;
+    background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04);
+    transition: var(--transition-smooth);
+}
+.hourly-card:hover { background:rgba(255,255,255,0.06); transform:translateY(-4px); border-color:rgba(56,189,248,0.2); }
+.hourly-time { font-size:0.75rem; font-weight:600; color:var(--text-secondary); }
+.hourly-icon { width:28px; height:28px; stroke:var(--accent-color); }
+.hourly-temp { font-size:0.95rem; font-weight:700; }
+.hourly-pop  { font-size:0.72rem; font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:2px; }
+
+.weekly-list-container { display:flex; flex-direction:column; gap:9px; }
+.weekly-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 18px; border-radius:16px;
+    background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03);
+    transition: var(--transition-smooth);
+}
+.weekly-row:hover { background:rgba(255,255,255,0.05); transform:translateX(4px); }
+.weekly-day { font-size:0.92rem; font-weight:600; width:80px; }
+.weekly-condition { display:flex; align-items:center; gap:10px; width:150px; }
+.weekly-row-icon { width:24px; height:24px; stroke:var(--accent-color); }
+.weekly-desc-text { font-size:0.85rem; color:var(--text-secondary); }
+.weekly-temp-range { display:flex; align-items:center; gap:10px; font-size:0.9rem; font-weight:700; }
+.weekly-min-temp { color:var(--text-secondary); }
+
+/* 8. Loading */
+.loading-overlay {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(11,15,25,0.85); backdrop-filter:blur(8px);
+    z-index:1000; display:none; flex-direction:column; justify-content:center; align-items:center; gap:20px;
+}
+.loading-overlay.active { display:flex; }
+.spinner { width:48px; height:48px; border:4px solid rgba(56,189,248,0.1); border-radius:50%; border-top-color:var(--accent-color); animation:spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-overlay p { font-size:1.05rem; font-weight:600; color:var(--text-primary); animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+.loading-spinner { text-align:center; color:var(--text-secondary); padding:28px; width:100%; }
+
+/* 9. Responsive */
+@media (max-width: 960px) {
+    .grid-layout { grid-template-columns: 1fr; }
+    .grid-span-all { grid-column: span 1; }
+    .alert-cards-grid { grid-template-columns: repeat(3, 1fr); }
+    .nationwide-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .logo { font-size: 1.8rem; }
+    .temp-val { font-size: 4rem; }
+    .alert-cards-grid { grid-template-columns: repeat(2, 1fr); }
+    .nationwide-grid { grid-template-columns: 1fr; }
+}
