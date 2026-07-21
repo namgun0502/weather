@@ -227,9 +227,14 @@ function updateCurrentWeather(data, cityName) {
     if (weatherDescDisplay) weatherDescDisplay.textContent = ci.desc;
     if (weatherIconMain)    weatherIconMain.innerHTML      =
         `<i data-lucide="${ci.icon}" style="width:90px;height:90px;"></i>`;
+    // 습도: current에 없으면 0% 대신 안전하게 '--%' 표시
+    const rawHumid = cur.relative_humidity_2m;
+    // 풍속: current 에서 wind_speed_10m, 없으면 cw.windspeed (구버전 필드명) 순서로 fallback
+    const rawWind  = cur.wind_speed_10m ?? cw.windspeed;
+
     if (feelsLikeDisplay) feelsLikeDisplay.textContent = `${safeRound(cur.apparent_temperature ?? rawTemp)}°C`;
-    if (humidityDisplay)  humidityDisplay.textContent  = cur.relative_humidity_2m!=null ? `${Math.round(cur.relative_humidity_2m)}%` : "--%";
-    if (windDisplay)      windDisplay.textContent      = cur.wind_speed_10m!=null ? `${parseFloat(cur.wind_speed_10m).toFixed(1)} m/s` : "-- m/s";
+    if (humidityDisplay)  humidityDisplay.textContent  = rawHumid != null ? `${Math.round(rawHumid)}%` : "--%";
+    if (windDisplay)      windDisplay.textContent      = rawWind  != null ? `${parseFloat(rawWind).toFixed(1)} m/s` : "-- m/s";
     const pop = data.hourly?.precipitation_probability?.[new Date().getHours()] ?? 0;
     if (popDisplay) popDisplay.textContent = `${pop}%`;
 }
@@ -297,9 +302,9 @@ async function fetchWeatherData(lat, lon, cityName="선택 지역") {
     showLoading();
     try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-            `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation` +
-            `&current_weather=true&hourly=temperature_2m,precipitation_probability,weather_code` +
-            `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
+            `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation,wind_direction_10m` +
+            `&hourly=temperature_2m,precipitation_probability,weather_code` +
+            `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&wind_speed_unit=ms`;
         const res  = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
