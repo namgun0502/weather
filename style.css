@@ -588,57 +588,71 @@ header { display: flex; flex-direction: column; gap: 16px; align-items: center; 
     font-size: 0.82rem;
     font-weight: 700;
     color: #f43f5e; /* 장밋빛 컬러 포인트 */
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 4px;
 }
-.food-text {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 10px 12px;
-    border-radius: 8px;
-    border-left: 3px solid #f43f5e;
+.food-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
-.recommended-food-name {
+.food-item-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-left: 3.5px solid #f43f5e;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: var(--transition-smooth);
+}
+.food-item-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(244, 63, 94, 0.15);
+}
+.food-item-name {
     font-size: 0.84rem;
     color: var(--text-primary);
-    margin-bottom: 4px;
 }
-.recommended-food-name strong {
+.food-item-name strong {
     color: #ffe4e6;
-    background: rgba(244, 63, 94, 0.2);
-    padding: 2px 6px;
+    background: rgba(244, 63, 94, 0.15);
+    padding: 1px 5px;
     border-radius: 4px;
 }
-.food-desc {
-    font-size: 0.8rem;
+.food-item-desc {
+    font-size: 0.78rem;
     color: var(--text-secondary);
-    line-height: 1.5;
-    margin: 6px 0 10px !important;
+    line-height: 1.45;
+    margin: 0 !important;
 }
-.restaurant-map-link {
+.food-map-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #f43f5e, #fb7185);
-    color: #fff !important;
+    background: rgba(244, 63, 94, 0.08);
+    border: 1.5px solid rgba(244, 63, 94, 0.35);
+    color: #fda4af !important;
     text-decoration: none !important;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    padding: 8px 14px;
-    border-radius: 6px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    margin-top: 6px;
+    align-self: flex-start;
     transition: var(--transition-smooth);
-    box-shadow: 0 4px 10px rgba(244, 63, 94, 0.2);
-    width: 100%;
-    margin-top: 4px;
 }
-.restaurant-map-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(244, 63, 94, 0.4);
-    filter: brightness(1.1);
+.food-map-btn:hover {
+    background: linear-gradient(135deg, #f43f5e, #fb7185);
+    border-color: transparent;
+    color: #fff !important;
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 8px rgba(244, 63, 94, 0.25);
 }
-.restaurant-map-link:active {
+.food-map-btn:active {
     transform: translateY(0);
 }
 

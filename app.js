@@ -573,41 +573,46 @@ function getClothingRecommendation(temp, code) {
     return recommendation;
 }
 
-// 날씨와 온도에 따른 맞춤 추천 음식 객체 반환
+// 날씨와 온도에 따른 맞춤 추천 음식 3종 세트 반환
 function getFoodRecommendation(temp, code) {
     const isRain = RAINY_CODES.has(code);
     const isSnow = SNOWY_CODES.has(code);
 
     if (isRain) {
-        return {
-            name: "해물파전과 막걸리",
-            desc: "☔ 비 오는 날엔 지글지글 부쳐낸 파전에 고소한 막걸리 한 잔이 진리죠! 따끈하고 진한 국물의 칼국수나 수제비도 아주 잘 어울려요."
-        };
+        return [
+            { name: "해물파전과 막걸리", desc: "☔ 비 오는 날엔 노릇하게 부친 파전에 막걸리 한 잔이 진리죠!" },
+            { name: "칼국수와 수제비", desc: "🍜 빗소리를 들으며 먹는 따뜻하고 걸쭉한 국물이 일품입니다." },
+            { name: "삼겹살과 소주", desc: "🥓 비 오는 우중충한 날, 지글지글 굽는 고기 냄새는 참을 수 없죠." }
+        ];
     }
     if (isSnow) {
-        return {
-            name: "얼큰한 부대찌개",
-            desc: "☃️ 함박눈이 내릴 땐 보글보글 끓여낸 매콤한 부대찌개나 든든한 순대국밥이 최고예요! 따뜻한 국물 요리로 몸을 녹여 보세요."
-        };
+        return [
+            { name: "얼큰한 부대찌개", desc: "☃️ 하얗게 눈 내리는 날, 햄과 소시지 가득한 보글보글 찌개가 제격입니다." },
+            { name: "뼈다귀 감자탕", desc: "🍲 든든한 뼈해장국이나 감자탕으로 속을 따뜻하게 데워보세요." },
+            { name: "어묵탕과 사케/도쿠리", desc: "🍢 모락모락 김이 피어오르는 뜨끈한 어묵국물에 온사케 한 잔!" }
+        ];
     }
     if (temp >= 28) {
-        return {
-            name: "시원한 물냉면",
-            desc: "☀️ 폭염과 더위에는 살얼음 동동 띄운 냉면이나 메밀소바, 시원한 콩국수로 더위를 날려보내세요! 이열치열 삼계탕도 훌륭한 선택입니다."
-        };
+        return [
+            { name: "물냉면/비빔냉면", desc: "☀️ 땀이 뻘뻘 나는 무더위엔 살얼음 동동 띄운 냉면이 1순위입니다!" },
+            { name: "이열치열 삼계탕", desc: "🐔 땀 흘려 허해진 몸을 채워줄 든든한 삼계탕 보양식입니다." },
+            { name: "시원한 콩국수", desc: "🥣 걸쭉하고 고소한 국물에 얼음 띄운 콩국수로 더위를 달래보세요." }
+        ];
     }
     if (temp <= 9) {
-        return {
-            name: "뜨끈한 국밥과 뼈해장국",
-            desc: "🥶 찬바람 솔솔 부는 추운 날씨에는 김이 모락모락 나는 순대국밥, 돼지국밥이나 얼큰한 뼈해장국으로 든든하게 속을 채워보세요."
-        };
+        return [
+            { name: "따뜻한 순대국밥", desc: "🥶 으스스 찬 바람 불 때는 역시 뚝배기에 펄펄 끓는 국밥이 최고입니다." },
+            { name: "불맛 가득한 짬뽕", desc: "🍜 매콤하고 칼칼한 짬뽕 국물 한 모금으로 한기를 싹 날려보세요." },
+            { name: "소곱창전골", desc: "🥘 추운 저녁, 든든하고 진한 곱창 전골 요리를 강력 추천합니다." }
+        ];
     }
     
     // 일반적인 봄/가을 선선한 날씨
-    return {
-        name: "초밥 또는 이탈리안 파스타",
-        desc: "🌤️ 나들이 가기 좋은 화창한 날씨네요! 분위기 좋은 곳에서 깔끔한 초밥이나 고소한 파스타, 혹은 달콤한 제육볶음은 어떠신가요?"
-    };
+    return [
+        { name: "모듬초밥", desc: "🌤️ 나들이 가기 좋은 쾌적한 날씨, 정갈하고 맛있는 스시 어떠신가요?" },
+        { name: "이탈리안 파스타", desc: "🍝 선선한 바람과 함께 어울리는 분위기 좋은 레스토랑의 스파게티입니다." },
+        { name: "매콤한 제육볶음", desc: "🥩 든든하고 입맛을 돋우는 밥도둑 제육볶음 쌈밥을 제안합니다." }
+    ];
 }
 
 // 봇 날씨 응답 말풍선 추가
@@ -626,12 +631,8 @@ function appendBotWeatherBubble(cityName, data) {
     // 옷차림 추천 멘트 가져오기
     const clothingAdvice = getClothingRecommendation(temp, code);
     
-    // 음식 추천 정보 가져오기
-    const foodAdvice = getFoodRecommendation(temp, code);
-    
-    // 카카오맵 맛집 검색 링크 동적 생성 (검색한 지역명 + 추천 음식 조합)
-    const encodedQuery = encodeURIComponent(`${cityName} ${foodAdvice.name}`);
-    const mapUrl = `https://map.kakao.com/?q=${encodedQuery}`;
+    // 음식 추천 정보 가져오기 (3종 배열)
+    const foodList = getFoodRecommendation(temp, code);
 
     // 날씨 이모지 매핑
     const weatherEmoji = {
@@ -639,6 +640,22 @@ function appendBotWeatherBubble(cityName, data) {
         "cloud-fog": "🌫️", "cloud-drizzle": "🌦️", "cloud-rain": "🌧️",
         "snowflake": "❄️", "cloud-lightning-rain": "⛈️", "cloud-lightning": "🌩️"
     }[ci.icon] || "🌤️";
+
+    // 3가지 음식 항목 각각의 지도 검색 링크 생성
+    let foodHtml = "";
+    foodList.forEach(food => {
+        const encodedQuery = encodeURIComponent(`${cityName} ${food.name}`);
+        const mapUrl = `https://map.kakao.com/?q=${encodedQuery}`;
+        foodHtml += `
+            <div class="food-item-card">
+                <div class="food-item-name">📌 <strong>${food.name}</strong></div>
+                <p class="food-item-desc">${food.desc}</p>
+                <a href="${mapUrl}" target="_blank" class="food-map-btn">
+                    <i data-lucide="map-pin" style="width:12px;height:12px;margin-right:4px;"></i> 지도에서 맛집 찾기 🗺️
+                </a>
+            </div>
+        `;
+    });
 
     const bubble = document.createElement("div");
     bubble.className = "chat-bubble bot";
@@ -659,15 +676,11 @@ function appendBotWeatherBubble(cityName, data) {
                 <div class="clothing-header">👗 추천 옷차림 가이드</div>
                 <div class="clothing-text">${clothingAdvice.replace(/\n/g, "<br>")}</div>
             </div>
-            <!-- 음식 및 맛집 추천 영역 추가 -->
+            <!-- 음식 및 맛집 추천 영역 -->
             <div class="bubble-food-info">
-                <div class="food-header">🍴 오늘의 날씨 맞춤 추천 푸드</div>
-                <div class="food-text">
-                    <div class="recommended-food-name">추천 메뉴: <strong>${foodAdvice.name}</strong></div>
-                    <p class="food-desc">${foodAdvice.desc}</p>
-                    <a href="${mapUrl}" target="_blank" class="restaurant-map-link">
-                        <i data-lucide="map"></i> "${cityName}" 맛집 위치 확인하기
-                    </a>
+                <div class="food-header">🍴 오늘의 날씨 맞춤 추천 푸드 (3가지)</div>
+                <div class="food-list-wrapper">
+                    ${foodHtml}
                 </div>
             </div>
         </div>
