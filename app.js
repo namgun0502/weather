@@ -61,15 +61,16 @@ const windDisplay        = document.getElementById("wind-display");
 const popDisplay         = document.getElementById("pop-display");
 const hourlyList         = document.getElementById("hourly-list");
 const weeklyList         = document.getElementById("weekly-list");
-const citySearch         = document.getElementById("city-search");
-const searchBtn          = document.getElementById("search-btn");
-const geoBtn             = document.getElementById("geo-btn");
 const loadingOverlay     = document.getElementById("loading-overlay");
 const cityChips          = document.querySelectorAll(".city-chip");
 const alertCardsGrid     = document.getElementById("alert-cards-grid");
 const alertRegionDisplay = document.getElementById("alert-region-display");
 const nationwideGrid     = document.getElementById("nationwide-grid");
 const regionQuickBtns    = document.querySelectorAll(".region-btn");
+// ─── 챗봇 DOM ────────────────────────────────────────────────────────
+const chatMessages       = document.getElementById("chat-messages");
+const chatInput          = document.getElementById("chat-input");
+const chatSendBtn        = document.getElementById("chat-send-btn");
 
 function showLoading() { loadingOverlay?.classList.add("active"); }
 function hideLoading() { loadingOverlay?.classList.remove("active"); }
@@ -481,13 +482,11 @@ regionQuickBtns.forEach(btn => {
     );
 });
 
-searchBtn?.addEventListener("click", () => searchCity(citySearch.value));
-citySearch?.addEventListener("keydown", e => { if(e.key==="Enter") searchCity(citySearch.value); });
-geoBtn?.addEventListener("click", () => {
-    cityChips.forEach(c => c.classList.remove("active"));
-    regionQuickBtns.forEach(b => b.classList.remove("active"));
-    getUserLocation();
-});
+// ─── 챗봇 이벤트 ─────────────────────────────────────────────────────
+// 전송 버튼 클릭
+chatSendBtn?.addEventListener("click", () => handleChatInput());
+// 엔터키 입력
+chatInput?.addEventListener("keydown", e => { if (e.key === "Enter") handleChatInput(); });
 
 // ─── 앱 시작 ─────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
@@ -499,3 +498,166 @@ document.addEventListener("DOMContentLoaded", async () => {
     ]);
     window.lucide?.createIcons();
 });
+
+// ═══════════════════════════════════════════════════════
+// 챗봇 날씨 검색 함수들
+// ═══════════════════════════════════════════════════════
+
+// 사용자 말풍선 추가
+function appendUserBubble(text) {
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble user";
+    bubble.innerHTML = `
+        <div class="bubble-avatar">🧑</div>
+        <div class="bubble-content">${text}</div>
+    `;
+    chatMessages.appendChild(bubble);
+    scrollChatToBottom();
+}
+
+// 봇 타이핑 애니메이션 표시
+function showTypingIndicator() {
+    const el = document.createElement("div");
+    el.className = "chat-bubble bot typing";
+    el.id = "typing-indicator";
+    el.innerHTML = `
+        <div class="bubble-avatar">🤖</div>
+        <div class="bubble-content">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    `;
+    chatMessages.appendChild(el);
+    scrollChatToBottom();
+}
+
+// 타이핑 애니메이션 제거
+function hideTypingIndicator() {
+    document.getElementById("typing-indicator")?.remove();
+}
+
+// 봇 날씨 응답 말풍선 추가
+function appendBotWeatherBubble(cityName, data) {
+    const cur  = data.current || {};
+    const cw   = data.current_weather || {};
+    const temp = Math.round(cur.temperature_2m ?? cw.temperature ?? 0);
+    const code = cur.weather_code ?? cw.weathercode ?? 0;
+    const ci   = WEATHER_CODES[code] || { desc: "흐림", icon: "cloud" };
+    const feels = Math.round(cur.apparent_temperature ?? temp);
+    const humid = cur.relative_humidity_2m != null ? `${Math.round(cur.relative_humidity_2m)}%` : "--%";
+    const wind  = (cur.wind_speed_10m ?? cw.windspeed) != null
+        ? `${parseFloat(cur.wind_speed_10m ?? cw.windspeed).toFixed(1)} m/s` : "-- m/s";
+    const pop   = data.hourly?.precipitation_probability?.[new Date().getHours()] ?? 0;
+
+    // 날씨 이모지 매핑
+    const weatherEmoji = {
+        "sun": "☀️", "cloud-sun": "🌤️", "cloud": "☁️",
+        "cloud-fog": "🌫️", "cloud-drizzle": "🌦️", "cloud-rain": "🌧️",
+        "snowflake": "❄️", "cloud-lightning-rain": "⛈️", "cloud-lightning": "🌩️"
+    }[ci.icon] || "🌤️";
+
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble bot";
+    bubble.innerHTML = `
+        <div class="bubble-avatar">🤖</div>
+        <div class="bubble-content">
+            <p class="bubble-city-name">${weatherEmoji} ${cityName} 현재 날씨</p>
+            <div class="bubble-weather-info">
+                <div class="bubble-weather-row"><span>🌡 온도</span><strong>${temp}°C</strong></div>
+                <div class="bubble-weather-row"><span>🤔 체감</span><strong>${feels}°C</strong></div>
+                <div class="bubble-weather-row"><span>💧 습도</span><strong>${humid}</strong></div>
+                <div class="bubble-weather-row"><span>💨 풍속</span><strong>${wind}</strong></div>
+                <div class="bubble-weather-row"><span>☔ 강수</span><strong>${pop}%</strong></div>
+                <div class="bubble-weather-row"><span>📋 상태</span><strong>${ci.desc}</strong></div>
+            </div>
+        </div>
+    `;
+    chatMessages.appendChild(bubble);
+    scrollChatToBottom();
+    // 대화가 20개 넘으면 오래된 것 삭제 (첫 인사 메시지 제외)
+    const bubbles = chatMessages.querySelectorAll(".chat-bubble");
+    if (bubbles.length > 22) bubbles[1].remove();
+}
+
+// 봇 오류 말풍선
+function appendBotErrorBubble(msg) {
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble bot";
+    bubble.innerHTML = `
+        <div class="bubble-avatar">🤖</div>
+        <div class="bubble-content">
+            <p>😔 ${msg}</p>
+            <p class="bubble-hint">다른 도시명을 입력해 보세요. 예) 서울, 부산, Tokyo</p>
+        </div>
+    `;
+    chatMessages.appendChild(bubble);
+    scrollChatToBottom();
+}
+
+// 채팅창 맨 아래로 스크롤
+function scrollChatToBottom() {
+    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// ─── 챗봇 입력 처리 메인 함수 ────────────────────────────────────────
+async function handleChatInput() {
+    const raw = chatInput?.value?.trim();
+    if (!raw) return;
+
+    // 1. 사용자 말풍선 출력 & 입력창 초기화
+    appendUserBubble(raw);
+    chatInput.value = "";
+
+    // 2. 타이핑 애니메이션
+    showTypingIndicator();
+
+    try {
+        // 3. 고정 좌표 도시인지 먼저 확인
+        const trimmed = raw.trim();
+        const fixedKey = Object.keys(FIXED_CITY_COORDS).find(
+            k => trimmed.startsWith(k) || k.startsWith(trimmed)
+        );
+
+        let lat, lon, cityName;
+        if (fixedKey) {
+            // 고정 도시 사용
+            ({ lat, lon, name: cityName } = FIXED_CITY_COORDS[fixedKey]);
+        } else {
+            // Open-Meteo 지오코딩 API 검색
+            const res = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}&count=1&language=ko`
+            );
+            const geoData = await res.json();
+            if (!geoData.results?.length) {
+                hideTypingIndicator();
+                appendBotErrorBubble(`"${raw}"를 찾을 수 없습니다.`);
+                return;
+            }
+            const r = geoData.results[0];
+            lat = r.latitude;
+            lon = r.longitude;
+            cityName = r.name || trimmed;
+        }
+
+        // 4. 날씨 API 호출
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+            `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation,wind_direction_10m` +
+            `&hourly=temperature_2m,precipitation_probability,weather_code` +
+            `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&wind_speed_unit=ms`;
+        const weatherRes  = await fetch(url);
+        const weatherData = await weatherRes.json();
+
+        // 5. 타이핑 제거 후 날씨 말풍선 출력
+        hideTypingIndicator();
+        appendBotWeatherBubble(cityName, weatherData);
+
+        // 6. 메인 카드 + 예보 패널도 함께 갱신
+        selectCity(lat, lon, cityName);
+
+    } catch(e) {
+        hideTypingIndicator();
+        appendBotErrorBubble("날씨 정보를 가져오는 중 오류가 발생했습니다.");
+        console.error(e);
+    }
+}
