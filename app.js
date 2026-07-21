@@ -624,20 +624,39 @@ async function handleChatInput() {
             // 고정 도시 사용
             ({ lat, lon, name: cityName } = FIXED_CITY_COORDS[fixedKey]);
         } else {
-            // Open-Meteo 지오코딩 API 검색
-            const res = await fetch(
-                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}&count=1&language=ko`
-            );
+            // 상세 주소(시, 군, 구, 동) 대응을 위한 Nominatim API 검색 (User-Agent 정보와 한국어 결과 요청 포함)
+            const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(trimmed)}&format=json&limit=1&accept-language=ko`;
+            const res = await fetch(searchUrl, {
+                headers: {
+                    "User-Agent": "SkyFlowWeatherApp/1.0"
+                }
+            });
             const geoData = await res.json();
-            if (!geoData.results?.length) {
-                hideTypingIndicator();
-                appendBotErrorBubble(`"${raw}"를 찾을 수 없습니다.`);
-                return;
+            
+            if (!geoData || geoData.length === 0) {
+                // Nominatim에서 찾지 못한 경우 기존 Open-Meteo Geocoding을 fallback으로 시도
+                const fallbackRes = await fetch(
+                    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}&count=1&language=ko`
+                );
+                const fallbackData = await fallbackRes.json();
+                if (!fallbackData.results?.length) {
+                    hideTypingIndicator();
+                    appendBotErrorBubble(`"${raw}"를 찾을 수 없습니다.`);
+                    return;
+                }
+                const r = fallbackData.results[0];
+                lat = r.latitude;
+                lon = r.longitude;
+                cityName = r.name || trimmed;
+            } else {
+                const r = geoData[0];
+                lat = parseFloat(r.lat);
+                lon = parseFloat(r.lon);
+                
+                // Nominatim의 display_name은 복잡하므로, 쉼표로 분할하여 가장 앞의 주소 명칭(예: 역삼동, 강남구)을 도시명으로 사용
+                const nameParts = r.display_name.split(",");
+                cityName = nameParts[0].trim();
             }
-            const r = geoData.results[0];
-            lat = r.latitude;
-            lon = r.longitude;
-            cityName = r.name || trimmed;
         }
 
         // 4. 날씨 API 호출
