@@ -537,6 +537,42 @@ function hideTypingIndicator() {
     document.getElementById("typing-indicator")?.remove();
 }
 
+// 기온 및 날씨에 따른 옷차림 추천 텍스트 반환
+function getClothingRecommendation(temp, code) {
+    let recommendation = "";
+    
+    // 기온에 따른 분류
+    if (temp >= 28) {
+        recommendation = "👕 민소매, 반팔 티셔츠, 반바지, 린넨 소재의 옷처럼 아주 시원하고 통풍이 잘되는 가벼운 옷차림이 딱이에요!";
+    } else if (temp >= 23) {
+        recommendation = "👕 반팔 티셔츠, 얇은 셔츠, 반바지나 얇은 면바지를 추천해요. 실내 에어컨 바람에 대비해 가벼운 겉옷을 챙기셔도 좋습니다.";
+    } else if (temp >= 20) {
+        recommendation = "👕 얇은 가디건, 긴팔 티셔츠, 셔츠, 면바지나 슬랙스가 어울려요. 낮에는 약간 포근하고 아침저녁으로는 선선한 날씨입니다.";
+    } else if (temp >= 17) {
+        recommendation = "🧥 얇은 가디건, 니트, 맨투맨, 청바지가 좋아요. 겉옷을 가볍게 걸쳐 기온 변화에 맞춰 조절해 주세요.";
+    } else if (temp >= 12) {
+        recommendation = "🧥 자켓, 가디건, 셔츠 위에 껴입을 수 있는 니트, 청바지를 권장해요. 본격적으로 쌀쌀함이 느껴지는 계절입니다.";
+    } else if (temp >= 9) {
+        recommendation = "🧥 트렌치코트, 야상 자켓, 기모 바지가 좋아요. 찬 바람이 몸 속으로 들어오지 않게 따뜻한 겉옷을 입으세요.";
+    } else if (temp >= 5) {
+        recommendation = "🧣 울 코트, 가죽 자켓, 히트텍 등 내의와 니트를 껴입어 체온을 유지해야 해요. 손발이 시려울 수 있으니 주의하세요.";
+    } else {
+        recommendation = "❄️ 패딩, 두꺼운 코트, 목도리, 장갑, 기모 제품을 총동원해 무장해 주세요! 영하권이거나 매서운 겨울 추위입니다.";
+    }
+
+    // 날씨 상태(비/눈)에 따른 우산/안전 팁 추가
+    const isRain = RAINY_CODES.has(code);
+    const isSnow = SNOWY_CODES.has(code);
+
+    if (isRain) {
+        recommendation += "\n\n☔ 비 소식이 있으니 외출하실 때 튼튼한 우산을 꼭 챙기시고, 젖어도 괜찮은 신발을 선택해 주세요!";
+    } else if (isSnow) {
+        recommendation += "\n\n☃️ 눈이 내려 길판이 미끄러울 수 있으니 굽이 낮고 마찰력이 좋은 신발을 신고 보행에 주의하세요!";
+    }
+
+    return recommendation;
+}
+
 // 봇 날씨 응답 말풍선 추가
 function appendBotWeatherBubble(cityName, data) {
     const cur  = data.current || {};
@@ -549,6 +585,9 @@ function appendBotWeatherBubble(cityName, data) {
     const wind  = (cur.wind_speed_10m ?? cw.windspeed) != null
         ? `${parseFloat(cur.wind_speed_10m ?? cw.windspeed).toFixed(1)} m/s` : "-- m/s";
     const pop   = data.hourly?.precipitation_probability?.[new Date().getHours()] ?? 0;
+
+    // 옷차림 추천 멘트 가져오기
+    const clothingAdvice = getClothingRecommendation(temp, code);
 
     // 날씨 이모지 매핑
     const weatherEmoji = {
@@ -570,6 +609,11 @@ function appendBotWeatherBubble(cityName, data) {
                 <div class="bubble-weather-row"><span>💨 풍속</span><strong>${wind}</strong></div>
                 <div class="bubble-weather-row"><span>☔ 강수</span><strong>${pop}%</strong></div>
                 <div class="bubble-weather-row"><span>📋 상태</span><strong>${ci.desc}</strong></div>
+            </div>
+            <!-- 옷차림 추천 영역 추가 -->
+            <div class="bubble-clothing-info">
+                <div class="clothing-header">👗 추천 옷차림 가이드</div>
+                <div class="clothing-text">${clothingAdvice.replace(/\n/g, "<br>")}</div>
             </div>
         </div>
     `;
