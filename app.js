@@ -363,16 +363,88 @@ async function searchCity(name) {
     finally    { hideLoading(); }
 }
 
+// ─── 역지오코딩: 좌표 → 한국어 주소 (시·구·동) ─────────────────────────────
+// BigDataCloud 무료 API 사용 (API 키 불필요, 한국어 지원)
+async function getAddressFromCoords(lat, lon) {
+    try {
+        const res  = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ko`
+        );
+        const data = await res.json();
+        const admins = data.localityInfo?.administrative || [];
+
+        // adminLevel 기준으로 시·구·동 추출
+        // 4 = 시/도,  6 = 구/군/시,  8 = 동/읍/면
+        const city = admins.find(a => a.adminLevel === 4)?.name || data.city || "";
+        const gu   = admins.find(a => a.adminLevel === 6)?.name || "";
+        const dong = admins.find(a => a.adminLevel === 8)?.name || data.locality || "";
+
+        // 빈 값 제거 후 공백으로 이어붙이기 → 예) "서울특별시 중구 명동"
+        const parts = [city, gu, dong].filter(v => v && v.trim());
+        return parts.length > 0 ? parts.join(" ") : "내 위치";
+    } catch(e) {
+        console.warn("역지오코딩 실패:", e);
+        return "내 위치";
+    }
+}
+
 // ─── 현재 위치 날씨 ──────────────────────────────────────────────────
 function getUserLocation() {
-    if (!navigator.geolocation) { fetchWeatherData(37.5665,126.9780,"서울"); return; }
+    // ① Geolocation 지원 여부 확인
+    if (!navigator.geolocation) {
+        alert("이 브라우저는 위치 기능을 지원하지 않습니다.\n서울 날씨를 대신 표시합니다.");
+        fetchWeatherData(37.5665, 126.9780, "서울");
+        return;
+    }
+
+    // ② file:// 프로토콜 감지 → Chrome은 file 환경에서 위치 차단
+    if (location.protocol === "file:") {
+        alert(
+            "⚠️ 파일을 직접 열면 위치 기능이 차단됩니다.\n\n" +
+            "해결 방법:\n" +
+            "VS Code의 'Live Server' 확장을 설치하고\n" +
+            "index.html을 우클릭 → 'Open with Live Server'를 선택해 주세요.\n\n" +
+            "지금은 서울 날씨를 표시합니다."
+        );
+        fetchWeatherData(37.5665, 126.9780, "서울");
+        return;
+    }
+
     showLoading();
     navigator.geolocation.getCurrentPosition(
-        async pos => { await fetchWeatherData(pos.coords.latitude, pos.coords.longitude, "내 위치"); },
-        ()        => { hideLoading(); fetchWeatherData(37.5665,126.9780,"서울"); },
-        { timeout:4000 }
+        // ③ 성공: 좌표 → 한국어 주소 → 날씨 조회
+        async pos => {
+            try {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const locationName = await getAddressFromCoords(lat, lon);
+                await fetchWeatherData(lat, lon, locationName);
+            } catch(e) {
+                console.error("위치 처리 오류:", e);
+                hideLoading();
+                fetchWeatherData(37.5665, 126.9780, "서울");
+            }
+        },
+        // ④ 실패: 에러 코드별 안내 메시지
+        (err) => {
+            hideLoading();
+            const errMsgs = {
+                1: "위치 권한이 거부되었습니다.\n브라우저 주소창 왼쪽 🔒 아이콘 → 위치 → 허용 후 새로고침 해주세요.",
+                2: "현재 위치를 가져올 수 없습니다. (GPS/네트워크 오류)\n서울 날씨를 표시합니다.",
+                3: "위치 요청 시간이 초과되었습니다.\n서울 날씨를 표시합니다."
+            };
+            const msg = errMsgs[err.code] || `알 수 없는 오류: ${err.message}`;
+            alert(msg);
+            // 권한 거부(1)가 아닌 경우에는 서울 날씨로 대체
+            if (err.code !== 1) {
+                fetchWeatherData(37.5665, 126.9780, "서울");
+            }
+        },
+        // ⑤ 옵션: 10초 타임아웃, 정확도는 낮게(빠른 응답 우선), 30초 캐시
+        { timeout: 10000, enableHighAccuracy: false, maximumAge: 30000 }
     );
 }
+
 
 // ─── ★ 통합 도시 선택 함수 ───────────────────────────────────────────
 // 어디서 선택하든 이 함수 하나로 모든 UI를 한 번에 연동
