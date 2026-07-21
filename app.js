@@ -573,6 +573,43 @@ function getClothingRecommendation(temp, code) {
     return recommendation;
 }
 
+// 날씨와 온도에 따른 맞춤 추천 음식 객체 반환
+function getFoodRecommendation(temp, code) {
+    const isRain = RAINY_CODES.has(code);
+    const isSnow = SNOWY_CODES.has(code);
+
+    if (isRain) {
+        return {
+            name: "해물파전과 막걸리",
+            desc: "☔ 비 오는 날엔 지글지글 부쳐낸 파전에 고소한 막걸리 한 잔이 진리죠! 따끈하고 진한 국물의 칼국수나 수제비도 아주 잘 어울려요."
+        };
+    }
+    if (isSnow) {
+        return {
+            name: "얼큰한 부대찌개",
+            desc: "☃️ 함박눈이 내릴 땐 보글보글 끓여낸 매콤한 부대찌개나 든든한 순대국밥이 최고예요! 따뜻한 국물 요리로 몸을 녹여 보세요."
+        };
+    }
+    if (temp >= 28) {
+        return {
+            name: "시원한 물냉면",
+            desc: "☀️ 폭염과 더위에는 살얼음 동동 띄운 냉면이나 메밀소바, 시원한 콩국수로 더위를 날려보내세요! 이열치열 삼계탕도 훌륭한 선택입니다."
+        };
+    }
+    if (temp <= 9) {
+        return {
+            name: "뜨끈한 국밥과 뼈해장국",
+            desc: "🥶 찬바람 솔솔 부는 추운 날씨에는 김이 모락모락 나는 순대국밥, 돼지국밥이나 얼큰한 뼈해장국으로 든든하게 속을 채워보세요."
+        };
+    }
+    
+    // 일반적인 봄/가을 선선한 날씨
+    return {
+        name: "초밥 또는 이탈리안 파스타",
+        desc: "🌤️ 나들이 가기 좋은 화창한 날씨네요! 분위기 좋은 곳에서 깔끔한 초밥이나 고소한 파스타, 혹은 달콤한 제육볶음은 어떠신가요?"
+    };
+}
+
 // 봇 날씨 응답 말풍선 추가
 function appendBotWeatherBubble(cityName, data) {
     const cur  = data.current || {};
@@ -588,6 +625,13 @@ function appendBotWeatherBubble(cityName, data) {
 
     // 옷차림 추천 멘트 가져오기
     const clothingAdvice = getClothingRecommendation(temp, code);
+    
+    // 음식 추천 정보 가져오기
+    const foodAdvice = getFoodRecommendation(temp, code);
+    
+    // 카카오맵 맛집 검색 링크 동적 생성 (검색한 지역명 + 추천 음식 조합)
+    const encodedQuery = encodeURIComponent(`${cityName} ${foodAdvice.name}`);
+    const mapUrl = `https://map.kakao.com/?q=${encodedQuery}`;
 
     // 날씨 이모지 매핑
     const weatherEmoji = {
@@ -610,10 +654,21 @@ function appendBotWeatherBubble(cityName, data) {
                 <div class="bubble-weather-row"><span>☔ 강수</span><strong>${pop}%</strong></div>
                 <div class="bubble-weather-row"><span>📋 상태</span><strong>${ci.desc}</strong></div>
             </div>
-            <!-- 옷차림 추천 영역 추가 -->
+            <!-- 옷차림 추천 영역 -->
             <div class="bubble-clothing-info">
                 <div class="clothing-header">👗 추천 옷차림 가이드</div>
                 <div class="clothing-text">${clothingAdvice.replace(/\n/g, "<br>")}</div>
+            </div>
+            <!-- 음식 및 맛집 추천 영역 추가 -->
+            <div class="bubble-food-info">
+                <div class="food-header">🍴 오늘의 날씨 맞춤 추천 푸드</div>
+                <div class="food-text">
+                    <div class="recommended-food-name">추천 메뉴: <strong>${foodAdvice.name}</strong></div>
+                    <p class="food-desc">${foodAdvice.desc}</p>
+                    <a href="${mapUrl}" target="_blank" class="restaurant-map-link">
+                        <i data-lucide="map"></i> "${cityName}" 맛집 위치 확인하기
+                    </a>
+                </div>
             </div>
         </div>
     `;

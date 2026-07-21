@@ -578,4 +578,69 @@ header { display: flex; flex-direction: column; gap: 16px; align-items: center; 
     border-left: 3px solid var(--accent-color);
 }
 
+/* 추천 음식 및 맛집 지도 연동 스타일 */
+.bubble-food-info {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+.food-header {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #f43f5e; /* 장밋빛 컬러 포인트 */
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.food-text {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border-left: 3px solid #f43f5e;
+}
+.recommended-food-name {
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.recommended-food-name strong {
+    color: #ffe4e6;
+    background: rgba(244, 63, 94, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.food-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 6px 0 10px !important;
+}
+.restaurant-map-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #f43f5e, #fb7185);
+    color: #fff !important;
+    text-decoration: none !important;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 6px;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 10px rgba(244, 63, 94, 0.2);
+    width: 100%;
+    margin-top: 4px;
+}
+.restaurant-map-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(244, 63, 94, 0.4);
+    filter: brightness(1.1);
+}
+.restaurant-map-link:active {
+    transform: translateY(0);
+}
+
+
 
