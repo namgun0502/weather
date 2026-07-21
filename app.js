@@ -440,8 +440,8 @@ function getUserLocation() {
                 fetchWeatherData(37.5665, 126.9780, "서울");
             }
         },
-        // ⑤ 옵션: 10초 타임아웃, 정확도는 낮게(빠른 응답 우선), 30초 캐시
-        { timeout: 10000, enableHighAccuracy: false, maximumAge: 30000 }
+        // ⑤ 옵션: 15초 타임아웃, 정확도 높게(GPS 우선), 캐시 사용 안 함(항상 최신 위치)
+        { timeout: 15000, enableHighAccuracy: true, maximumAge: 0 }
     );
 }
 
